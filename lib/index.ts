@@ -5,3 +5,5 @@ export * from "./repositories/contract";
 export * from "./repositories/database";
 export * from "./module";
 export * from "./constants";
+export * from "./interfaces";
+export * from "./options";

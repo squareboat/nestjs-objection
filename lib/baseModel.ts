@@ -5,6 +5,7 @@ import { CustomQueryBuilder } from "./queryBuilder";
 
 export class BaseModel extends Model {
   readonly id!: number;
+  static connection: string;
 
   QueryBuilderType!: CustomQueryBuilder<this>;
 

@@ -1,15 +1,31 @@
 import { RepositoryContract } from "./contract";
 import { BaseModel } from "../baseModel";
 import { CustomQueryBuilder } from "../queryBuilder";
-import { ModelNotFound } from "../exception";
 import { ModelKeys } from "../interfaces";
 import { Expression } from "objection";
-import Objection = require("objection");
+import { PrimitiveValue } from "objection";
+import { ObjectionService } from "../service";
+import { Knex as KnexType } from "knex";
+import { ModelNotFound } from "../exceptions";
 
 export class DatabaseRepository<T extends BaseModel>
   implements RepositoryContract<T>
 {
   model: any;
+  knexConnection: KnexType | null = null;
+
+  public bindCon(conName?: string): DatabaseRepository<T> {
+    const newRepository = new (<any>(
+      this.constructor
+    ))() as DatabaseRepository<T>;
+
+    const connection = ObjectionService.connection(
+      conName || this.model.connection
+    );
+    newRepository.knexConnection = connection;
+
+    return newRepository;
+  }
 
   setModel(model: BaseModel): this {
     this.model = model;
@@ -50,7 +66,7 @@ export class DatabaseRepository<T extends BaseModel>
       Array.isArray(inputs[key] as unknown as any)
         ? query.whereIn(
             key,
-            inputs[key] as unknown as Expression<Objection.PrimitiveValue>[]
+            inputs[key] as unknown as Expression<PrimitiveValue>[]
           )
         : query.where(key, inputs[key] as unknown as string);
     }
@@ -235,7 +251,10 @@ export class DatabaseRepository<T extends BaseModel>
    * Returns new Query Builder Instance
    */
   query<R = T>(): CustomQueryBuilder<T, R> {
-    return this.model.query();
+    if (!this.knexConnection) {
+      this.knexConnection = ObjectionService.connection(this.model.connection);
+    }
+    return this.model.query(this.knexConnection);
   }
 
   getEntityName(): string {

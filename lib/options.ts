@@ -3,7 +3,8 @@ import { Knex } from "knex";
 
 export interface DatabaseOptions {
   isGlobal?: boolean;
-  connection: Knex.Config;
+  default: string;
+  connections: Record<string, Knex.Config>;
 }
 
 export interface DatabaseAsyncOptions extends Pick<ModuleMetadata, "imports"> {
