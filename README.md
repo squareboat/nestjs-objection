@@ -14,6 +14,15 @@ Almost every application nowadays, requires a database to persist data. We have 
 - ✅ Powerful model entity relation operations
 - ✅ Easy to use Transactions
 
+**What we have added on top of it?**:
+
+- ✅ Setting up project is now much easier than ever
+- ✅ Custom `BaseModel` having performant functions
+- ✅ In-built `DatabaseRepository` to help you maintain data store functions smartly
+- ✅ Beautiful console commands to manage migrations
+- ✅ Custom `QueryBuilder` with some much needed methods
+- ✅ Utilise multiple connections in repositories smartly.
+
 ## Documentation
 
 To read the complete documentation, [click here](https://squareboat.com/open-source/nestjs-boilerplate/database/introduction/).
