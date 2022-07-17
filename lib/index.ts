@@ -7,3 +7,4 @@ export * from "./module";
 export * from "./constants";
 export * from "./interfaces";
 export * from "./options";
+export * from "./service";
