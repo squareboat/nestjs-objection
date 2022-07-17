@@ -1,9 +1,7 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { Knex } from "knex";
+import { Injectable } from "@nestjs/common";
 import * as pc from "picocolors";
-import { SquareboatNestObjection } from "../constants";
 import { Command, ConsoleIO } from "@squareboat/nest-console";
-import { DatabaseOptions } from "../options";
+import { ObjectionService } from "../service";
 
 @Injectable()
 export class DbOperationsCommand {
@@ -12,18 +10,15 @@ export class DbOperationsCommand {
     loadExtensions: [".js"],
   };
 
-  constructor(
-    @Inject(SquareboatNestObjection.dbConnection) private knex: Knex,
-    @Inject(SquareboatNestObjection.databaseOptions)
-    private config: DatabaseOptions
-  ) {}
+  constructor() {}
 
   @Command("migrate:status", {
     desc: "Command to show the status of all migrations",
   })
   async migrateStatus(_cli: ConsoleIO): Promise<void> {
+    const knex = ObjectionService.connection();
     const [completed, pending]: Record<string, any>[][] =
-      await this.knex.migrate.list(this.migratorConfig);
+      await knex.migrate.list(this.migratorConfig);
     const statusList = [];
 
     for (const migration of completed) {
@@ -39,8 +34,10 @@ export class DbOperationsCommand {
 
   @Command("migrate", { desc: "Command to run the pending migrations" })
   async migrationUp(_cli: ConsoleIO): Promise<void> {
-    const [batch, migrations]: [number, string[]] =
-      await this.knex.migrate.latest(this.migratorConfig);
+    const knex = ObjectionService.connection();
+    const [batch, migrations]: [number, string[]] = await knex.migrate.latest(
+      this.migratorConfig
+    );
 
     if (migrations.length === 0) {
       _cli.info("No migrations to run");
@@ -57,8 +54,10 @@ export class DbOperationsCommand {
     desc: "Command to rollback the previous batch of migrations",
   })
   async migrateRollback(_cli: ConsoleIO) {
-    const [batch, migrations]: [number, string[]] =
-      await this.knex.migrate.rollback(this.migratorConfig);
+    const knex = ObjectionService.connection();
+    const [batch, migrations]: [number, string[]] = await knex.migrate.rollback(
+      this.migratorConfig
+    );
 
     if (migrations.length === 0) {
       _cli.info("No migrations to rollback. Already at the base migration");
@@ -75,6 +74,7 @@ export class DbOperationsCommand {
     desc: "Command to reset the migration",
   })
   async migrateReset(_cli: ConsoleIO) {
+    const knex = ObjectionService.connection();
     const confirm = await _cli.confirm(
       "Are you sure you want to reset your database? This action is irreversible."
     );
@@ -88,12 +88,12 @@ export class DbOperationsCommand {
       "Please enter the password of the database to proceed"
     );
 
-    // if (password !== this.config.connection.connection.password) {
+    // if (password !== this.config.get("db.password")) {
     //   _cli.error(" Wrong Password. Exiting... ");
     //   return;
     // }
 
-    const [, migrations]: [number, string[]] = await this.knex.migrate.down(
+    const [, migrations]: [number, string[]] = await knex.migrate.down(
       this.migratorConfig
     );
 
@@ -112,8 +112,9 @@ export class DbOperationsCommand {
     desc: "Command to create a new migration",
   })
   async makeMigration(_cli: ConsoleIO) {
-    const res = await this.knex.migrate.make(_cli.argument("name"), {
-      directory: "./database/migrations",
+    const knex = ObjectionService.connection();
+    const res = await knex.migrate.make(_cli.argument("name"), {
+      directory: this.migratorConfig.directory,
       extension: "js",
     });
 

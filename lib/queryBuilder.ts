@@ -73,6 +73,20 @@ export class CustomQueryBuilder<M extends Model, R = M[]> extends QueryBuilder<
     return this;
   }
 
+  when(
+    condition: any,
+    truthyCb: (query: CustomQueryBuilder<M, R>, condition: any) => this,
+    falsyCb?: (query: CustomQueryBuilder<M, R>, condition: any) => this
+  ): this {
+    if (condition) {
+      return truthyCb(this, condition);
+    } else if (falsyCb) {
+      return falsyCb(this, condition);
+    } else {
+      return this;
+    }
+  }
+
   safeWhereIn(col: string, expr: Expression<PrimitiveValue>): this {
     if (!Array.isArray(expr)) return this;
     if (Array.isArray(expr) && expr.length < 1) return this;
