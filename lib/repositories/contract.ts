@@ -1,5 +1,5 @@
-import { BaseModel } from "../baseModel";
-import { ModelKeys } from "../interfaces";
+import { BaseModel } from '../baseModel';
+import { ModelKeys } from '../interfaces';
 
 export interface RepositoryContract<T extends BaseModel> {
   model: any;
@@ -36,7 +36,7 @@ export interface RepositoryContract<T extends BaseModel> {
    */
   createOrUpdate(
     conditions: ModelKeys<T>,
-    values: ModelKeys<T>
+    values: ModelKeys<T>,
   ): Promise<T | undefined>;
 
   /**
@@ -62,7 +62,7 @@ export interface RepositoryContract<T extends BaseModel> {
    */
   updateWhere(
     where: ModelKeys<T>,
-    setValues: ModelKeys<T>
+    setValues: ModelKeys<T>,
   ): Promise<number | null>;
 
   /**
@@ -107,7 +107,7 @@ export interface RepositoryContract<T extends BaseModel> {
   attach(
     model: T,
     relation: string,
-    payload: number | string | Array<number | string> | Record<string, any>
+    payload: number | string | Array<number | string> | Record<string, any>,
   ): Promise<void>;
 
   /**
@@ -144,7 +144,7 @@ export interface RepositoryContract<T extends BaseModel> {
   updateAndReturn(
     where: T,
     setValues: ModelKeys<T>,
-    returnOne?: boolean
+    returnOne?: boolean,
   ): Promise<T | T[]>;
 
   /**

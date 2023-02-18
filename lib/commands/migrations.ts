@@ -1,24 +1,27 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import * as pc from "picocolors";
 import { Command, ConsoleIO } from "@squareboat/nest-console";
 import { ObjectionService } from "../service";
+import { SquareboatNestObjection } from "../constants";
+import { DatabaseOptions } from "../options";
 
 @Injectable()
 export class DbOperationsCommand {
-  private migratorConfig = {
-    directory: "./database/migrations",
-    loadExtensions: [".js"],
-  };
+  constructor(
+    @Inject(SquareboatNestObjection.databaseOptions)
+    private options: DatabaseOptions
+  ) {}
 
-  constructor() {}
-
-  @Command("migrate:status", {
+  @Command("migrate:status {--connection==}", {
     desc: "Command to show the status of all migrations",
   })
   async migrateStatus(_cli: ConsoleIO): Promise<void> {
-    const knex = ObjectionService.connection();
+    const conn = _cli.option<string>("connection") || this.options.default;
+    const knex = ObjectionService.connection(conn);
+    const connConfig = this.options.connections[conn];
+
     const [completed, pending]: Record<string, any>[][] =
-      await knex.migrate.list(this.migratorConfig);
+      await knex.migrate.list(connConfig.migrations);
     const statusList = [];
 
     for (const migration of completed) {
@@ -32,11 +35,16 @@ export class DbOperationsCommand {
     _cli.table(statusList);
   }
 
-  @Command("migrate", { desc: "Command to run the pending migrations" })
+  @Command("migrate {--connection==}", {
+    desc: "Command to run the pending migrations",
+  })
   async migrationUp(_cli: ConsoleIO): Promise<void> {
-    const knex = ObjectionService.connection();
+    const conn = _cli.option<string>("connection") || this.options.default;
+    const knex = ObjectionService.connection(conn);
+    const connConfig = this.options.connections[conn];
+
     const [batch, migrations]: [number, string[]] = await knex.migrate.latest(
-      this.migratorConfig
+      connConfig.migrations
     );
 
     if (migrations.length === 0) {
@@ -50,13 +58,16 @@ export class DbOperationsCommand {
     }
   }
 
-  @Command("migrate:rollback", {
+  @Command("migrate:rollback {--connection==}", {
     desc: "Command to rollback the previous batch of migrations",
   })
   async migrateRollback(_cli: ConsoleIO) {
-    const knex = ObjectionService.connection();
+    const conn = _cli.option<string>("connection") || this.options.default;
+    const knex = ObjectionService.connection(conn);
+    const connConfig = this.options.connections[conn];
+
     const [batch, migrations]: [number, string[]] = await knex.migrate.rollback(
-      this.migratorConfig
+      connConfig.migrations
     );
 
     if (migrations.length === 0) {
@@ -70,11 +81,14 @@ export class DbOperationsCommand {
     }
   }
 
-  @Command("migrate:reset", {
+  @Command("migrate:reset {--connection==}", {
     desc: "Command to reset the migration",
   })
   async migrateReset(_cli: ConsoleIO) {
-    const knex = ObjectionService.connection();
+    const conn = _cli.option<string>("connection") || this.options.default;
+    const knex = ObjectionService.connection(conn);
+    const connConfig = this.options.connections[conn];
+
     const confirm = await _cli.confirm(
       "Are you sure you want to reset your database? This action is irreversible."
     );
@@ -88,13 +102,18 @@ export class DbOperationsCommand {
       "Please enter the password of the database to proceed"
     );
 
-    // if (password !== this.config.get("db.password")) {
-    //   _cli.error(" Wrong Password. Exiting... ");
-    //   return;
+    // if (connConfig.connection && typeof connConfig.connection != "string") {
+    //   if (
+    //     connConfig.connection?["password"] &&
+    //     password !== connConfig.connection?['password']
+    //   ) {
+    //     _cli.error(" Wrong Password. Exiting... ");
+    //     return;
+    //   }
     // }
 
     const [, migrations]: [number, string[]] = await knex.migrate.down(
-      this.migratorConfig
+      connConfig.migrations
     );
 
     if (migrations.length === 0) {
@@ -108,13 +127,17 @@ export class DbOperationsCommand {
     }
   }
 
-  @Command("make:migration {name}", {
+  @Command("make:migration {name} {--connection=}", {
     desc: "Command to create a new migration",
   })
   async makeMigration(_cli: ConsoleIO) {
-    const knex = ObjectionService.connection();
-    const res = await knex.migrate.make(_cli.argument("name"), {
-      directory: this.migratorConfig.directory,
+    const name = _cli.argument<string>("name");
+    const conn = _cli.option<string>("connection") || this.options.default;
+    const knex = ObjectionService.connection(conn);
+    const connConfig = this.options.connections[conn];
+
+    const res = await knex.migrate.make(name, {
+      directory: connConfig?.migrations?.directory,
       extension: "js",
     });
 

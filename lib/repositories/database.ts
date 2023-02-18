@@ -119,7 +119,10 @@ export class DatabaseRepository<T extends BaseModel>
    * @param model
    * @param setValues
    */
-  async update(model: T, setValues: ModelKeys<T>): Promise<number | null> {
+  async update(
+    model: ModelKeys<T>,
+    setValues: ModelKeys<T>
+  ): Promise<number | null> {
     const query = this.query<number>();
     query.findById(model.id).patch(setValues);
     return await query;
@@ -164,9 +167,9 @@ export class DatabaseRepository<T extends BaseModel>
    *
    * @param model
    */
-  async delete(model: T | number): Promise<boolean> {
+  async delete(model: ModelKeys<T> | number): Promise<boolean> {
     return !!+(await this.query().deleteById(
-      typeof model != "object" ? model : model.id
+      typeof model != "object" ? model : model["id"]
     ));
   }
 
@@ -175,7 +178,7 @@ export class DatabaseRepository<T extends BaseModel>
    *
    * @param inputs T
    */
-  async deleteWhere<T>(inputs: T): Promise<boolean> {
+  async deleteWhere<T>(inputs: ModelKeys<T>): Promise<boolean> {
     const query = this.query();
 
     for (const key in inputs) {
@@ -191,8 +194,8 @@ export class DatabaseRepository<T extends BaseModel>
    *
    * @param model
    */
-  async refresh(model: T): Promise<T | undefined> {
-    return model ? await this.query().findById(model.id) : undefined;
+  async refresh(model: ModelKeys<T>): Promise<T | undefined> {
+    return model ? await this.query().findById(model["id"]) : undefined;
   }
 
   /**
@@ -202,7 +205,7 @@ export class DatabaseRepository<T extends BaseModel>
    * @param payload
    */
   async attach(
-    model: T,
+    model: ModelKeys<T>,
     relation: string,
     payload: number | string | Array<number | string> | Record<string, any>
   ): Promise<void> {
@@ -216,7 +219,11 @@ export class DatabaseRepository<T extends BaseModel>
    * @param relation
    * @param payload
    */
-  async sync(model: T, relation: string, payload: any[]): Promise<void> {
+  async sync(
+    model: ModelKeys<T>,
+    relation: string,
+    payload: any[]
+  ): Promise<void> {
     await model.$relatedQuery(relation).unrelate();
     if (Array.isArray(payload) && payload.length > 0) {
       await model.$relatedQuery(relation).relate(payload);
@@ -228,7 +235,7 @@ export class DatabaseRepository<T extends BaseModel>
    * Fetch a chunk and run callback
    */
   async chunk(
-    where: T,
+    where: ModelKeys<T>,
     size: number,
     cb: (models: T[]) => void
   ): Promise<void> {
@@ -244,7 +251,7 @@ export class DatabaseRepository<T extends BaseModel>
    * @throws ModelNotFoundException
    */
   raiseError(): void {
-    throw new ModelNotFound(this.getEntityName() + " not found");
+    throw new ModelNotFound(this.getEntityName());
   }
 
   /**
@@ -267,7 +274,10 @@ export class DatabaseRepository<T extends BaseModel>
    * @param setValues
    * @param returnOne Set this true when you want only the first object to be returned
    */
-  async updateAndReturn(where: T, setValues: ModelKeys<T>): Promise<T | T[]> {
+  async updateAndReturn(
+    where: ModelKeys<T>,
+    setValues: ModelKeys<T>
+  ): Promise<T | T[]> {
     const query = this.query();
     const records = await query.where(where).patch(setValues).returning("*");
     if (records.length == 1) return records[0];

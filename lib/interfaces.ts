@@ -1,10 +1,12 @@
-import { BaseModel } from "./baseModel";
-import { FetchGraphOptions, PartialModelObject } from "objection";
+import { BaseModel } from './baseModel';
+import { FetchGraphOptions, PartialModelObject, Model } from 'objection';
 
 export type GenericFunction = (...args: any[]) => any;
 export type GenericClass = Record<string, any>;
-export type ModelKeys<T extends BaseModel> = PartialModelObject<T> & {
-  [key: string]: any;
+export type Keys<T> = keyof T;
+
+export type ModelKeys<T> = {
+  [P in keyof T]: any;
 };
 
 export interface Pagination<T> {
@@ -19,11 +21,6 @@ export interface Pagination<T> {
 
 export interface SortableSchema {
   sort?: string;
-}
-
-export interface ObjectionModel {
-  $fetchGraph?: GenericFunction;
-  $load?(exp: LoadRelSchema): Promise<void>;
 }
 
 export interface NestedLoadRelSchema {

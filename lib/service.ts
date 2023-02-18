@@ -1,9 +1,9 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { BaseModel } from "./baseModel";
-import { SquareboatNestObjection } from "./constants";
-import { DatabaseOptions } from "./options";
-import Knex, { Knex as KnexType } from "knex";
-import { ConnectionNotFound } from "./exceptions";
+import { Inject, Injectable } from '@nestjs/common';
+import { BaseModel } from './baseModel';
+import { SquareboatNestObjection } from './constants';
+import { DatabaseOptions } from './options';
+import Knex, { Knex as KnexType } from 'knex';
+import { ConnectionNotFound } from './exceptions';
 
 @Injectable()
 export class ObjectionService {
@@ -11,7 +11,7 @@ export class ObjectionService {
   static dbConnections: Record<string, KnexType>;
 
   constructor(
-    @Inject(SquareboatNestObjection.databaseOptions) config: DatabaseOptions
+    @Inject(SquareboatNestObjection.databaseOptions) config: DatabaseOptions,
   ) {
     const defaultConnection = config.connections[config.default];
     ObjectionService.config = config;
@@ -19,7 +19,7 @@ export class ObjectionService {
     BaseModel.knex(Knex(defaultConnection));
     for (const conName in config.connections) {
       ObjectionService.dbConnections[conName] = Knex(
-        config.connections[conName]
+        config.connections[conName],
       );
     }
   }
@@ -29,7 +29,7 @@ export class ObjectionService {
     conName = conName || ObjectionService.config.default;
 
     const isConNameValid = Object.keys(
-      ObjectionService.config.connections
+      ObjectionService.config.connections,
     ).includes(conName);
 
     if (conName && !isConNameValid) {
