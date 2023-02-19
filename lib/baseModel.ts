@@ -83,7 +83,7 @@ export class BaseModel extends Model {
       }
     }
 
-    await Promise.all(promises);
+    await Promise.allSettled(promises);
 
     return;
   }
