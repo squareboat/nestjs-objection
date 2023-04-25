@@ -1,5 +1,5 @@
 import { BaseModel } from '../baseModel';
-import { ModelKeys } from '../interfaces';
+import { LoadRelSchema, ModelKeys } from '../interfaces';
 
 export interface RepositoryContract<T extends BaseModel> {
   model: any;
@@ -13,15 +13,18 @@ export interface RepositoryContract<T extends BaseModel> {
    * Get first instance with the matching criterias
    * @param inputs
    * @param error
+   * @param eager
    */
-  firstWhere(inputs: ModelKeys<T>, error?: boolean): Promise<T | undefined>;
+  firstWhere(inputs: ModelKeys<T>, error?: boolean, eager?: LoadRelSchema): Promise<T | undefined>;
 
   /**
    * Get all instances with the matching criterias
    * @param inputs
    * @param error
+   * @param eager
+   * @param notEqual
    */
-  getWhere(inputs: ModelKeys<T>, error?: boolean): Promise<T[]>;
+  getWhere(inputs: ModelKeys<T>, error?: boolean, eager?: LoadRelSchema, notEqual?: ModelKeys<T>): Promise<T[]>;
 
   /**
    * Create a new model with given inputs

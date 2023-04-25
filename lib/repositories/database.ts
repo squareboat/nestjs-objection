@@ -1,7 +1,7 @@
 import { RepositoryContract } from "./contract";
 import { BaseModel } from "../baseModel";
 import { CustomQueryBuilder } from "../queryBuilder";
-import { ModelKeys } from "../interfaces";
+import { LoadRelSchema, ModelKeys } from "../interfaces";
 import { Expression } from "objection";
 import { PrimitiveValue } from "objection";
 import { ObjectionService } from "../service";
@@ -43,10 +43,15 @@ export class DatabaseRepository<T extends BaseModel>
    * Get first instance with the matching criterias
    * @param inputs
    * @param error
+   * @param eager
    */
-  async firstWhere(inputs: ModelKeys<T>, error = true): Promise<T | undefined> {
+  async firstWhere(inputs: ModelKeys<T>, error = true, eager?: LoadRelSchema): Promise<T | undefined> {
     // inputs = inputs || {};
     const query = this.query<T>();
+
+	if(eager) {
+		query.withGraphFetched(eager);
+	}
 
     const model = await query.findOne(inputs);
     if (error && !model) this.raiseError();
@@ -58,8 +63,10 @@ export class DatabaseRepository<T extends BaseModel>
    * Get all instances with the matching criterias
    * @param inputs
    * @param error
+   * @param eager
+   * @param notEqual
    */
-  async getWhere(inputs: ModelKeys<T>, error = true): Promise<T[]> {
+  async getWhere(inputs: ModelKeys<T>, error = true, eager?: LoadRelSchema, notEqual?: ModelKeys<T>): Promise<T[]> {
     const query = this.query<T[]>();
 
     for (const key in inputs) {
@@ -70,6 +77,22 @@ export class DatabaseRepository<T extends BaseModel>
           )
         : query.where(key, inputs[key] as unknown as string);
     }
+
+	if (eager) {
+		query.withGraphFetched(eager);
+	}
+
+	if (notEqual) {
+		for (const key in notEqual) {
+			Array.isArray(notEqual[key] as unknown as any)
+				? query.whereNotIn(
+					key,
+					notEqual[key] as unknown as Expression<PrimitiveValue>[]
+				)
+				: query.whereNot(key, notEqual[key] as unknown as string);
+		}
+	}
+
     const models = await query;
     if (error && models.length == 0) this.raiseError();
 
