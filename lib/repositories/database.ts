@@ -45,12 +45,28 @@ export class DatabaseRepository<T extends BaseModel>
    * @param error
    * @param eager
    */
-  async firstWhere(inputs: ModelKeys<T>, error = true, eager?: LoadRelSchema): Promise<T | undefined> {
+  async firstWhere(
+    inputs: ModelKeys<T>,
+    error = true,
+    eager?: LoadRelSchema,
+    notEqual?: ModelKeys<T>
+  ): Promise<T | undefined> {
     // inputs = inputs || {};
     const query = this.query<T>();
 
-	if(eager) {
-		query.withGraphFetched(eager);
+    if (eager) {
+      query.withGraphFetched(eager);
+    }
+
+	if (notEqual) {
+	  for (const key in notEqual) {
+		Array.isArray(notEqual[key] as unknown as any)
+		  ? query.whereNotIn(
+			  key,
+			  notEqual[key] as unknown as Expression<PrimitiveValue>[]
+			)
+		  : query.whereNot(key, notEqual[key] as unknown as string);
+	  }
 	}
 
     const model = await query.findOne(inputs);
@@ -66,7 +82,12 @@ export class DatabaseRepository<T extends BaseModel>
    * @param eager
    * @param notEqual
    */
-  async getWhere(inputs: ModelKeys<T>, error = true, eager?: LoadRelSchema, notEqual?: ModelKeys<T>): Promise<T[]> {
+  async getWhere(
+    inputs: ModelKeys<T>,
+    error = true,
+    eager?: LoadRelSchema,
+    notEqual?: ModelKeys<T>
+  ): Promise<T[]> {
     const query = this.query<T[]>();
 
     for (const key in inputs) {
@@ -78,20 +99,20 @@ export class DatabaseRepository<T extends BaseModel>
         : query.where(key, inputs[key] as unknown as string);
     }
 
-	if (eager) {
-		query.withGraphFetched(eager);
-	}
+    if (eager) {
+      query.withGraphFetched(eager);
+    }
 
-	if (notEqual) {
-		for (const key in notEqual) {
-			Array.isArray(notEqual[key] as unknown as any)
-				? query.whereNotIn(
-					key,
-					notEqual[key] as unknown as Expression<PrimitiveValue>[]
-				)
-				: query.whereNot(key, notEqual[key] as unknown as string);
-		}
-	}
+    if (notEqual) {
+      for (const key in notEqual) {
+        Array.isArray(notEqual[key] as unknown as any)
+          ? query.whereNotIn(
+              key,
+              notEqual[key] as unknown as Expression<PrimitiveValue>[]
+            )
+          : query.whereNot(key, notEqual[key] as unknown as string);
+      }
+    }
 
     const models = await query;
     if (error && models.length == 0) this.raiseError();

@@ -1,5 +1,5 @@
-import { BaseModel } from '../baseModel';
-import { LoadRelSchema, ModelKeys } from '../interfaces';
+import { BaseModel } from "../baseModel";
+import { LoadRelSchema, ModelKeys } from "../interfaces";
 
 export interface RepositoryContract<T extends BaseModel> {
   model: any;
@@ -14,8 +14,14 @@ export interface RepositoryContract<T extends BaseModel> {
    * @param inputs
    * @param error
    * @param eager
+   * @param notEqual
    */
-  firstWhere(inputs: ModelKeys<T>, error?: boolean, eager?: LoadRelSchema): Promise<T | undefined>;
+  firstWhere(
+    inputs: ModelKeys<T>,
+    error?: boolean,
+    eager?: LoadRelSchema,
+    notEqual?: ModelKeys<T>
+  ): Promise<T | undefined>;
 
   /**
    * Get all instances with the matching criterias
@@ -24,7 +30,12 @@ export interface RepositoryContract<T extends BaseModel> {
    * @param eager
    * @param notEqual
    */
-  getWhere(inputs: ModelKeys<T>, error?: boolean, eager?: LoadRelSchema, notEqual?: ModelKeys<T>): Promise<T[]>;
+  getWhere(
+    inputs: ModelKeys<T>,
+    error?: boolean,
+    eager?: LoadRelSchema,
+    notEqual?: ModelKeys<T>
+  ): Promise<T[]>;
 
   /**
    * Create a new model with given inputs
@@ -39,7 +50,7 @@ export interface RepositoryContract<T extends BaseModel> {
    */
   createOrUpdate(
     conditions: ModelKeys<T>,
-    values: ModelKeys<T>,
+    values: ModelKeys<T>
   ): Promise<T | undefined>;
 
   /**
@@ -65,7 +76,7 @@ export interface RepositoryContract<T extends BaseModel> {
    */
   updateWhere(
     where: ModelKeys<T>,
-    setValues: ModelKeys<T>,
+    setValues: ModelKeys<T>
   ): Promise<number | null>;
 
   /**
@@ -110,7 +121,7 @@ export interface RepositoryContract<T extends BaseModel> {
   attach(
     model: T,
     relation: string,
-    payload: number | string | Array<number | string> | Record<string, any>,
+    payload: number | string | Array<number | string> | Record<string, any>
   ): Promise<void>;
 
   /**
@@ -147,7 +158,7 @@ export interface RepositoryContract<T extends BaseModel> {
   updateAndReturn(
     where: T,
     setValues: ModelKeys<T>,
-    returnOne?: boolean,
+    returnOne?: boolean
   ): Promise<T | T[]>;
 
   /**
