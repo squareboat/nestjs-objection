@@ -1,5 +1,5 @@
-import { BaseModel } from '../baseModel';
-import { ModelKeys } from '../interfaces';
+import { BaseModel } from "../baseModel";
+import { ModelKeys } from "../interfaces";
 
 export interface RepositoryContract<T extends BaseModel> {
   model: any;
@@ -36,7 +36,7 @@ export interface RepositoryContract<T extends BaseModel> {
    */
   createOrUpdate(
     conditions: ModelKeys<T>,
-    values: ModelKeys<T>,
+    values: ModelKeys<T>
   ): Promise<T | undefined>;
 
   /**
@@ -62,20 +62,20 @@ export interface RepositoryContract<T extends BaseModel> {
    */
   updateWhere(
     where: ModelKeys<T>,
-    setValues: ModelKeys<T>,
+    setValues: ModelKeys<T>
   ): Promise<number | null>;
 
   /**
    * Check if any model exists where condition is matched
    * @param params
    */
-  exists(params: T): Promise<boolean>;
+  exists(params: ModelKeys<T>): Promise<boolean>;
 
   /**
    * Get count of rows matching a criteria
    * @param params
    */
-  count(params: T): Promise<number>;
+  count(params: ModelKeys<T>): Promise<number>;
 
   /**
    * Refresh a model
@@ -107,7 +107,7 @@ export interface RepositoryContract<T extends BaseModel> {
   attach(
     model: T,
     relation: string,
-    payload: number | string | Array<number | string> | Record<string, any>,
+    payload: number | string | Array<number | string> | Record<string, any>
   ): Promise<void>;
 
   /**
@@ -121,7 +121,11 @@ export interface RepositoryContract<T extends BaseModel> {
   /**
    * Fetch a chunk and run callback
    */
-  chunk(where: T, size: number, cb: (models: T[]) => void): Promise<void>;
+  chunk(
+    where: ModelKeys<T>,
+    size: number,
+    cb: (models: T[]) => void
+  ): Promise<void>;
 
   /**
    * Throws model not found exception.
@@ -142,9 +146,9 @@ export interface RepositoryContract<T extends BaseModel> {
    * @param returnOne Set this true when you want only the first object to be returned
    */
   updateAndReturn(
-    where: T,
+    where: ModelKeys<T>,
     setValues: ModelKeys<T>,
-    returnOne?: boolean,
+    returnOne?: boolean
   ): Promise<T | T[]>;
 
   /**
