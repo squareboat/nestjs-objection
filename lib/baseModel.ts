@@ -4,7 +4,7 @@ import { LoadRelOptions, LoadRelSchema } from "./interfaces";
 import { CustomQueryBuilder } from "./queryBuilder";
 
 export class BaseModel extends Model {
-  readonly id!: number;
+  readonly id?: number | string;
 
   /**
    * Specifies the connection to be used by the model.
@@ -20,7 +20,10 @@ export class BaseModel extends Model {
     expression: LoadRelSchema,
     options?: LoadRelOptions
   ): Promise<void> {
-    await this.$fetchGraph(expression, { ...options, skipFetched: false });
+    await this.$fetchGraph(expression, {
+      ...(options || {}),
+      skipFetched: false,
+    });
   }
 
   async $load(

@@ -124,7 +124,7 @@ export class DatabaseRepository<T extends BaseModel>
     setValues: ModelKeys<T>
   ): Promise<number | null> {
     const query = this.query<number>();
-    query.findById(model.id).patch(setValues);
+    query.findById(model?.id).patch(setValues);
     return await query;
   }
 
