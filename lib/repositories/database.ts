@@ -99,10 +99,6 @@ export class DatabaseRepository<T extends BaseModel>
         : query.where(key, inputs[key] as unknown as string);
     }
 
-    if (eager) {
-      query.withGraphFetched(eager);
-    }
-
     if (notEqual) {
       for (const key in notEqual) {
         Array.isArray(notEqual[key] as unknown as any)
@@ -112,6 +108,10 @@ export class DatabaseRepository<T extends BaseModel>
             )
           : query.whereNot(key, notEqual[key] as unknown as string);
       }
+    }
+
+    if (eager) {
+      query.withGraphFetched(eager);
     }
 
     const models = await query;
@@ -168,7 +168,7 @@ export class DatabaseRepository<T extends BaseModel>
     setValues: ModelKeys<T>
   ): Promise<number | null> {
     const query = this.query<number>();
-    query.findById(model.id).patch(setValues);
+    query.findById(model?.id).patch(setValues);
     return await query;
   }
 
