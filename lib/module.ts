@@ -7,6 +7,7 @@ import {
 } from "./options";
 import { ObjectionService } from "./service";
 import { DbOperationsCommand } from "./commands/migrations";
+import { DatabaseUtilitiesCommand } from "./commands/utils";
 
 @Module({
   imports: [],
@@ -26,6 +27,7 @@ export class ObjectionModule {
       providers: [
         ObjectionService,
         DbOperationsCommand,
+        DatabaseUtilitiesCommand,
         { provide: SquareboatNestObjection.databaseOptions, useValue: options },
       ],
       exports: [],
@@ -44,6 +46,7 @@ export class ObjectionModule {
         this.createOptionsProvider(options),
         ObjectionService,
         DbOperationsCommand,
+        DatabaseUtilitiesCommand,
       ],
       exports: [],
     };
