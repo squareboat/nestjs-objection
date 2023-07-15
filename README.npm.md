@@ -22,6 +22,7 @@ Almost every application nowadays, requires a database to persist data. We have 
 - ✅ Beautiful console commands to manage migrations
 - ✅ Custom `QueryBuilder` with some much needed methods
 - ✅ Utilise multiple connections in repositories smartly.
+- ✅ Clean Transaction API using Repositories
 
 ## Documentation
 

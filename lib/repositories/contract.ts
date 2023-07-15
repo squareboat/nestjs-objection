@@ -1,8 +1,15 @@
+import { Knex } from "knex";
 import { BaseModel } from "../baseModel";
 import { ModelKeys } from "../interfaces";
 
 export interface RepositoryContract<T extends BaseModel> {
   model: any;
+
+  bindCon(conName?: string): RepositoryContract<T>;
+
+  startTransaction(
+    options?: Knex.TransactionConfig
+  ): Promise<RepositoryContract<T>>;
 
   /**
    * Get all rows
@@ -156,4 +163,16 @@ export interface RepositoryContract<T extends BaseModel> {
    * @param inputs
    */
   bulkInsert(inputs: ModelKeys<T>[]): Promise<T[]>;
+
+  /**
+   * Commits the transaction
+   */
+  commit(): Promise<void>;
+
+  /**
+   * Rollbacks the transaction
+   */
+  rollback(): Promise<void>;
+
+  forUpdate(): this;
 }

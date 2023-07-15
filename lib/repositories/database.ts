@@ -5,14 +5,16 @@ import { ModelKeys } from "../interfaces";
 import { Expression } from "objection";
 import { PrimitiveValue } from "objection";
 import { ObjectionService } from "../service";
-import { Knex as KnexType } from "knex";
-import { ModelNotFound } from "../exceptions";
+import knex, { Knex, Knex as KnexType } from "knex";
+import { ModelNotFound, RepositoryError } from "../exceptions";
 
 export class DatabaseRepository<T extends BaseModel>
   implements RepositoryContract<T>
 {
   model: any;
   knexConnection: KnexType | null = null;
+  trx: Knex.Transaction | null = null;
+  currentforUpdate: Record<string, any> | null = null;
 
   public bindCon(conName?: string): DatabaseRepository<T> {
     const newRepository = new (<any>(
@@ -32,11 +34,40 @@ export class DatabaseRepository<T extends BaseModel>
     return this;
   }
 
+  async startTransaction(
+    options?: Knex.TransactionConfig
+  ): Promise<DatabaseRepository<T>> {
+    const newRepository = new (<any>(
+      this.constructor
+    ))() as DatabaseRepository<T>;
+
+    if (!this.knexConnection) {
+      newRepository.knexConnection = ObjectionService.connection(
+        this.model.connection
+      );
+    }
+
+    if (newRepository.knexConnection) {
+      newRepository.trx = await newRepository.knexConnection.transaction(
+        options || {}
+      );
+    }
+
+    return newRepository;
+  }
+
   /**
    * Get all rows
    */
   async all(): Promise<T[]> {
-    return this.query() as unknown as Promise<T[]>;
+    const query = this.query();
+
+    if (this.currentforUpdate) {
+      query.forUpdate();
+      this.clearForUpdate();
+    }
+
+    return query as unknown as Promise<T[]>;
   }
 
   /**
@@ -47,6 +78,11 @@ export class DatabaseRepository<T extends BaseModel>
   async firstWhere(inputs: ModelKeys<T>, error = true): Promise<T | undefined> {
     // inputs = inputs || {};
     const query = this.query<T>();
+
+    if (this.currentforUpdate) {
+      query.forUpdate();
+      this.clearForUpdate();
+    }
 
     const model = await query.findOne(inputs);
     if (error && !model) this.raiseError();
@@ -61,6 +97,11 @@ export class DatabaseRepository<T extends BaseModel>
    */
   async getWhere(inputs: ModelKeys<T>, error = true): Promise<T[]> {
     const query = this.query<T[]>();
+
+    if (this.currentforUpdate) {
+      query.forUpdate();
+      this.clearForUpdate();
+    }
 
     for (const key in inputs) {
       Array.isArray(inputs[key] as unknown as any)
@@ -261,7 +302,7 @@ export class DatabaseRepository<T extends BaseModel>
     if (!this.knexConnection) {
       this.knexConnection = ObjectionService.connection(this.model.connection);
     }
-    return this.model.query(this.knexConnection);
+    return this.model.query(this.trx || this.knexConnection);
   }
 
   getEntityName(): string {
@@ -291,5 +332,41 @@ export class DatabaseRepository<T extends BaseModel>
    */
   async bulkInsert(inputs: ModelKeys<T>[]): Promise<T[]> {
     return this.query().insert(inputs).returning("*") as unknown as T[];
+  }
+
+  /**
+   * Commits the transaction
+   */
+  async commit(): Promise<void> {
+    if (!this.trx) {
+      throw new RepositoryError(
+        "Commit method being run on null. No Transaction started!"
+      );
+    }
+
+    await this.trx.commit();
+  }
+
+  /**
+   * Rollbacks the transaction
+   */
+  async rollback(): Promise<void> {
+    if (!this.trx) {
+      throw new RepositoryError(
+        "Commit method being run on null. No Transaction started!"
+      );
+    }
+
+    await this.trx.rollback();
+  }
+
+  forUpdate(options?: Record<string, any>): this {
+    this.currentforUpdate = options || {};
+    return this;
+  }
+
+  private clearForUpdate(): this {
+    this.currentforUpdate = null;
+    return this;
   }
 }
