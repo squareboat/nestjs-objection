@@ -1,8 +1,8 @@
 import { Inject, Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { BaseModel } from "./baseModel";
 import { SquareboatNestObjection } from "./constants";
-import { DatabaseOptions } from "./options";
-import Knex, { Knex as KnexType, knex } from "knex";
+import { DatabaseOptions, DbConnectionOptions } from "./options";
+import Knex, { Knex as KnexType } from "knex";
 import { ConnectionNotFound } from "./exceptions";
 
 @Injectable()
@@ -18,9 +18,8 @@ export class ObjectionService implements OnModuleInit {
     ObjectionService.dbConnections = {};
     BaseModel.knex(Knex(defaultConnection));
     for (const conName in config.connections) {
-      ObjectionService.dbConnections[conName] = Knex(
-        config.connections[conName]
-      );
+      const { validateQuery, ...knexConfig } = config.connections[conName];
+      ObjectionService.dbConnections[conName] = Knex(knexConfig);
     }
   }
 
@@ -30,8 +29,10 @@ export class ObjectionService implements OnModuleInit {
         `[@squareboat/nestjs-objection] '${connName}' validating connection...`
       );
       const connection = ObjectionService.dbConnections[connName];
+      const dbOptions = ObjectionService.getOptions(connName);
+
       try {
-        const result = await connection.raw("select 1+1 as result");
+        await connection.raw(dbOptions.validateQuery || "select 1+1 as result");
         console.debug(
           `[@squareboat/nestjs-objection] '${connName}' connection validated...`
         );
@@ -42,6 +43,21 @@ export class ObjectionService implements OnModuleInit {
         );
       }
     }
+  }
+
+  static getOptions(conName?: string): DbConnectionOptions {
+    // check if conName is a valid connection name
+    conName = conName || ObjectionService.config.default;
+
+    const isConNameValid = Object.keys(
+      ObjectionService.config.connections
+    ).includes(conName);
+
+    if (conName && !isConNameValid) {
+      throw new ConnectionNotFound(conName);
+    }
+
+    return ObjectionService.config.connections[conName];
   }
 
   static connection(conName?: string): KnexType {
@@ -56,8 +72,6 @@ export class ObjectionService implements OnModuleInit {
       throw new ConnectionNotFound(conName);
     }
 
-    return ObjectionService.dbConnections[
-      conName ? conName : ObjectionService.config.default
-    ];
+    return ObjectionService.dbConnections[conName];
   }
 }

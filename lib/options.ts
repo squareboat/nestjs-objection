@@ -1,13 +1,17 @@
-import { ModuleMetadata, Type } from "@nestjs/common";
-import { Knex } from "knex";
+import { ModuleMetadata, Type } from '@nestjs/common';
+import { Knex } from 'knex';
+
+export interface DbConnectionOptions extends Knex.Config {
+  validateQuery?: string;
+}
 
 export interface DatabaseOptions {
   isGlobal?: boolean;
   default: string;
-  connections: Record<string, Knex.Config>;
+  connections: Record<string, DbConnectionOptions>;
 }
 
-export interface DatabaseAsyncOptions extends Pick<ModuleMetadata, "imports"> {
+export interface DatabaseAsyncOptions extends Pick<ModuleMetadata, 'imports'> {
   name?: string;
   isGlobal: boolean;
   useExisting?: Type<DatabaseOptions>;

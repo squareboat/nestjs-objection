@@ -6,7 +6,8 @@ import { Expression } from "objection";
 import { PrimitiveValue } from "objection";
 import { ObjectionService } from "../service";
 import knex, { Knex, Knex as KnexType } from "knex";
-import { ModelNotFound, RepositoryError } from "../exceptions";
+import { ModelNotFound } from "../exceptions";
+import { RepositoryError } from "../exceptions/repoError";
 
 export class DatabaseRepository<T extends BaseModel>
   implements RepositoryContract<T>
@@ -16,10 +17,10 @@ export class DatabaseRepository<T extends BaseModel>
   trx: Knex.Transaction | null = null;
   currentforUpdate: Record<string, any> | null = null;
 
-  public bindCon(conName?: string): DatabaseRepository<T> {
+  public bindCon(conName?: string): RepositoryContract<T> {
     const newRepository = new (<any>(
       this.constructor
-    ))() as DatabaseRepository<T>;
+    ))() as RepositoryContract<T>;
 
     const connection = ObjectionService.connection(
       conName || this.model.connection
@@ -32,28 +33,6 @@ export class DatabaseRepository<T extends BaseModel>
   setModel(model: BaseModel): this {
     this.model = model;
     return this;
-  }
-
-  async startTransaction(
-    options?: Knex.TransactionConfig
-  ): Promise<DatabaseRepository<T>> {
-    const newRepository = new (<any>(
-      this.constructor
-    ))() as DatabaseRepository<T>;
-
-    if (!this.knexConnection) {
-      newRepository.knexConnection = ObjectionService.connection(
-        this.model.connection
-      );
-    }
-
-    if (newRepository.knexConnection) {
-      newRepository.trx = await newRepository.knexConnection.transaction(
-        options || {}
-      );
-    }
-
-    return newRepository;
   }
 
   /**
@@ -334,10 +313,51 @@ export class DatabaseRepository<T extends BaseModel>
     return this.query().insert(inputs).returning("*") as unknown as T[];
   }
 
+  async startTrx(
+    options?: Knex.TransactionConfig
+  ): Promise<RepositoryContract<T>> {
+    const newRepository = new (<any>(
+      this.constructor
+    ))() as RepositoryContract<T>;
+
+    if (!this.knexConnection) {
+      newRepository.knexConnection = ObjectionService.connection(
+        this.model.connection
+      );
+    }
+
+    if (newRepository.knexConnection) {
+      newRepository.trx = await newRepository.knexConnection.transaction(
+        options || {}
+      );
+    }
+
+    return newRepository;
+  }
+
+  bindTrx(trx: Knex.Transaction): RepositoryContract<T> {
+    const newRepository = new (<any>(
+      this.constructor
+    ))() as RepositoryContract<T>;
+
+    if (!this.knexConnection) {
+      newRepository.knexConnection = ObjectionService.connection(
+        this.model.connection
+      );
+    }
+    newRepository.trx = trx;
+
+    return newRepository;
+  }
+
+  getTrx(): Knex.Transaction<any, any[]> | null {
+    return this.trx;
+  }
+
   /**
    * Commits the transaction
    */
-  async commit(): Promise<void> {
+  async commitTrx(): Promise<void> {
     if (!this.trx) {
       throw new RepositoryError(
         "Commit method being run on null. No Transaction started!"
@@ -350,7 +370,7 @@ export class DatabaseRepository<T extends BaseModel>
   /**
    * Rollbacks the transaction
    */
-  async rollback(): Promise<void> {
+  async rollbackTrx(): Promise<void> {
     if (!this.trx) {
       throw new RepositoryError(
         "Commit method being run on null. No Transaction started!"

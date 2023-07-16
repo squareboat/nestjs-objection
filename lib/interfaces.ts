@@ -1,4 +1,5 @@
-import { FetchGraphOptions } from "objection";
+import { BaseModel } from './baseModel';
+import { FetchGraphOptions, PartialModelObject, Model } from 'objection';
 
 export type GenericFunction = (...args: any[]) => any;
 export type GenericClass = Record<string, any>;

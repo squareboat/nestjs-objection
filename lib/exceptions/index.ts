@@ -1,3 +1,2 @@
-export * from "./connectionNotFound";
-export * from "./modelNotFound";
-export * from "./repoError";
+export * from './connectionNotFound';
+export * from './modelNotFound';

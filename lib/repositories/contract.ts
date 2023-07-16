@@ -1,15 +1,14 @@
-import { Knex } from "knex";
+import { Knex as KnexType } from "knex";
 import { BaseModel } from "../baseModel";
 import { ModelKeys } from "../interfaces";
 
 export interface RepositoryContract<T extends BaseModel> {
   model: any;
+  knexConnection: KnexType | null;
+  trx: KnexType.Transaction | null;
+  currentforUpdate: Record<string, any> | null;
 
   bindCon(conName?: string): RepositoryContract<T>;
-
-  startTransaction(
-    options?: Knex.TransactionConfig
-  ): Promise<RepositoryContract<T>>;
 
   /**
    * Get all rows
@@ -165,14 +164,33 @@ export interface RepositoryContract<T extends BaseModel> {
   bulkInsert(inputs: ModelKeys<T>[]): Promise<T[]>;
 
   /**
+   * Starts a new transaction on the database
+   * @param options Knex.TransactionConfig
+   */
+  startTrx(
+    options?: KnexType.TransactionConfig
+  ): Promise<RepositoryContract<T>>;
+
+  /**
+   * Binds passed trx instance to the repo
+   * @param trx
+   */
+  bindTrx(trx: KnexType.Transaction): RepositoryContract<T>;
+
+  /**
+   * @returns trx instance
+   */
+  getTrx(): KnexType.Transaction | null;
+
+  /**
    * Commits the transaction
    */
-  commit(): Promise<void>;
+  commitTrx(): Promise<void>;
 
   /**
    * Rollbacks the transaction
    */
-  rollback(): Promise<void>;
+  rollbackTrx(): Promise<void>;
 
   forUpdate(): this;
 }

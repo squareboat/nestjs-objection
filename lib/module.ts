@@ -1,13 +1,13 @@
-import { DynamicModule, Module, Provider, Type } from "@nestjs/common";
-import { SquareboatNestObjection } from "./constants";
+import { DynamicModule, Module, Provider, Type } from '@nestjs/common';
+import { SquareboatNestObjection } from './constants';
 import {
   DatabaseAsyncOptions,
   DatabaseAsyncOptionsFactory,
   DatabaseOptions,
-} from "./options";
-import { ObjectionService } from "./service";
-import { DbOperationsCommand } from "./commands/migrations";
-import { DatabaseUtilitiesCommand } from "./commands/utils";
+} from './options';
+import { ObjectionService } from './service';
+import { DbOperationsCommand } from './commands/migrations';
+import { DatabaseUtilitiesCommand } from './commands/utils';
 
 @Module({
   imports: [],
@@ -53,7 +53,7 @@ export class ObjectionModule {
   }
 
   private static createOptionsProvider(
-    options: DatabaseAsyncOptions
+    options: DatabaseAsyncOptions,
   ): Provider {
     if (options.useFactory) {
       return {
