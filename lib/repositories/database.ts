@@ -166,7 +166,7 @@ export class DatabaseRepository<T extends BaseModel>
    * Check if any model exists where condition is matched
    * @param params
    */
-  async exists(params: T): Promise<boolean> {
+  async exists(params: ModelKeys<T>): Promise<boolean> {
     const query = this.query();
     query.where(params);
     return !!(await query.onlyCount());
@@ -176,7 +176,7 @@ export class DatabaseRepository<T extends BaseModel>
    * Get count of rows matching a criteria
    * @param params
    */
-  async count(params: T): Promise<number> {
+  async count(params: ModelKeys<T>): Promise<number> {
     const query = this.query();
     query.where(params);
     return await query.onlyCount();
