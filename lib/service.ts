@@ -1,9 +1,9 @@
 import { Inject, Injectable, Logger, OnModuleInit } from "@nestjs/common";
-import { BaseModel } from "./baseModel";
 import { SquareboatNestObjection } from "./constants";
 import { DatabaseOptions, DbConnectionOptions } from "./options";
 import Knex, { Knex as KnexType } from "knex";
 import { ConnectionNotFound } from "./exceptions";
+import { BaseModel } from "./baseModel";
 
 @Injectable()
 export class ObjectionService implements OnModuleInit {

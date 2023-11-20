@@ -1,6 +1,5 @@
 import { RepositoryContract } from "./contract";
 import { BaseModel } from "../baseModel";
-import { CustomQueryBuilder } from "../queryBuilder";
 import { ModelKeys } from "../interfaces";
 import { Expression } from "objection";
 import { PrimitiveValue } from "objection";
@@ -8,6 +7,7 @@ import { ObjectionService } from "../service";
 import knex, { Knex, Knex as KnexType } from "knex";
 import { ModelNotFound } from "../exceptions";
 import { RepositoryError } from "../exceptions/repoError";
+import { CustomQueryBuilder } from "../queryBuilders/custom";
 
 export class DatabaseRepository<T extends BaseModel>
   implements RepositoryContract<T>

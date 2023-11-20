@@ -1,10 +1,10 @@
-import { GenericFunction } from './interfaces';
-import { BaseModel } from './baseModel';
+import { GenericFunction } from "./interfaces";
+import { BaseModel } from "./baseModel";
 
 export function InjectModel(model: any): GenericFunction {
   if (!(model.prototype instanceof BaseModel)) {
     throw new Error(
-      `Instance of ${BaseModel.name} expected, ${typeof model} passed!`,
+      `Instance of ${BaseModel.name} expected, ${typeof model} passed!`
     );
   }
 

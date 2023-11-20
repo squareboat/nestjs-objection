@@ -1,13 +1,16 @@
 {
   "name": "@squareboat/nestjs-objection",
-  "version": "0.2.5",
+  "version": "0.3.5",
   "description": "The objection database package for your NestJS Applications",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "keywords": [
     "nestjs",
     "nestjs-objection",
-    "nestjs-database"
+    "nestjs-database",
+    "nestjs-mysql",
+    "nestjs-postgres",
+    "nestjs-knex"
   ],
   "repository": {
     "type": "git",
