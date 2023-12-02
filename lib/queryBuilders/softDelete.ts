@@ -1,6 +1,7 @@
 import {
   ForClassMethod,
   Model,
+  ModelClass,
   Page,
   PartialModelObject,
   QueryBuilder,
@@ -14,8 +15,9 @@ export class SoftDeleteQueryBuilder<
   static forClass: ForClassMethod = (modelClass) => {
     const qb = QueryBuilder.forClass.call(this, modelClass);
     qb.onBuild((builder) => {
+      const tableName = builder.tableNameFor(modelClass as any);
       if (!builder.context().withArchived) {
-        builder.whereNull("deleted_at");
+        builder.whereNull(`${tableName}.deleted_at`);
       }
     });
     return qb as any;
