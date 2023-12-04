@@ -9,3 +9,4 @@ export * from "./constants";
 export * from "./interfaces";
 export * from "./options";
 export * from "./service";
+export * from "./exceptions";

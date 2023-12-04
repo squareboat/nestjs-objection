@@ -1,6 +1,6 @@
 {
   "name": "@squareboat/nestjs-objection",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "The objection database package for your NestJS Applications",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
