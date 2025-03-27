@@ -82,13 +82,15 @@ export class DatabaseRepository<T extends ObjectionModel>
         : query.where(key, inputs[key] as unknown as string);
     }
 
-    for (const key in whereNot) {
-      Array.isArray(whereNot[key] as unknown as any)
-        ? query.whereNotIn(
-            key,
-            whereNot[key] as unknown as Expression<PrimitiveValue>[],
-          )
-        : query.whereNot(key, whereNot[key] as unknown as string);
+    if (whereNot) {
+      for (const key in whereNot) {
+        Array.isArray(whereNot[key] as unknown as any)
+          ? query.whereNotIn(
+              key,
+              whereNot[key] as unknown as Expression<PrimitiveValue>[],
+            )
+          : query.whereNot(key, whereNot[key] as unknown as string);
+      }
     }
     const models = await query;
     if (error && models.length == 0) this.raiseError();
