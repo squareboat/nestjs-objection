@@ -1,4 +1,5 @@
 import { DynamicModule, Module, Provider, Type } from '@nestjs/common';
+import { DiscoveryModule } from '@nestjs/core';
 import { SquareboatNestObjection } from './constants';
 import {
   DatabaseAsyncOptions,
@@ -23,7 +24,7 @@ export class ObjectionModule {
     return {
       global: options.isGlobal || false,
       module: ObjectionModule,
-      imports: [],
+      imports: [DiscoveryModule],
       providers: [
         ObjectionService,
         DbOperationsCommand,
@@ -41,7 +42,7 @@ export class ObjectionModule {
     return {
       global: options.isGlobal || false,
       module: ObjectionModule,
-      imports: [],
+      imports: [DiscoveryModule],
       providers: [
         this.createOptionsProvider(options),
         ObjectionService,

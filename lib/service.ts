@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Inject, Injectable, OnModuleInit } from "@nestjs/common";
 import { SquareboatNestObjection } from "./constants";
 import { DatabaseOptions, DbConnectionOptions } from "./options";
 import Knex, { Knex as KnexType } from "knex";
