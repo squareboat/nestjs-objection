@@ -73,7 +73,7 @@ export class BaseModel extends Model {
         }
 
         if (o.children.length > 0) {
-          getUnloadedRelationsList(
+          await getUnloadedRelationsList(
             model[o.parent as ObjectKey] as unknown as this,
             o.children,
             o.parent
