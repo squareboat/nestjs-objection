@@ -164,4 +164,35 @@ export interface RepositoryContract<T extends ObjectionModel> {
    * @param inputs
    */
   bulkInsert(inputs: ModelKeys<T>[]): Promise<T[]>;
+
+    /**
+   * Starts a new transaction on the database
+   * @param options Knex.TransactionConfig
+   */
+    startTrx(
+      options?: KnexType.TransactionConfig
+    ): Promise<RepositoryContract<T>>;
+  
+    /**
+     * Binds passed trx instance to the repo
+     * @param trx
+     */
+    bindTrx(trx: KnexType.Transaction): RepositoryContract<T>;
+  
+    /**
+     * @returns trx instance
+     */
+    getTrx(): KnexType.Transaction | null;
+  
+    /**
+     * Commits the transaction
+     */
+    commitTrx(): Promise<void>;
+  
+    /**
+     * Rollbacks the transaction
+     */
+    rollbackTrx(): Promise<void>;
+  
+    forUpdate(): this;
 }
