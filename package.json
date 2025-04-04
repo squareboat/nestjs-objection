@@ -20,7 +20,7 @@
     "url": "https://github.com/squareboat/nestjs-objection/issues"
   },
   "homepage": "https://squareboat.com/open-source/database/",
-  "author": "Vinayak Sarawagi <vinayaksarawagi25@gmail.com>",
+  "author": "Squareboat <hi@squareboat.com>",
   "private": false,
   "license": "MIT",
   "scripts": {
