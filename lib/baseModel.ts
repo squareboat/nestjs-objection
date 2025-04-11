@@ -29,7 +29,7 @@ export class BaseModel extends Model {
 
   async $forceLoad(
     expression: LoadRelSchema,
-    options: LoadRelOptions
+    options?: LoadRelOptions
   ): Promise<void> {
     await this.$fetchGraph(expression, options);
   }
