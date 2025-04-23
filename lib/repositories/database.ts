@@ -1,15 +1,14 @@
-import { RepositoryContract } from "./contract";
-import { BaseModel } from "../baseModel";
-import { ModelKeys } from "../interfaces";
-import { Expression } from "objection";
-import { PrimitiveValue } from "objection";
-import { ObjectionService } from "../service";
-import knex, { Knex, Knex as KnexType } from "knex";
-import { ModelNotFound } from "../exceptions";
+import { Expression, PrimitiveValue } from 'objection';
+import { Knex, Knex as KnexType } from "knex";
+import { RepositoryContract } from './contract';
+import { BaseModel } from '../baseModel';
+import { CustomQueryBuilder } from '../queryBuilders/custom';
+import { LoadRelSchema, ModelKeys, ObjectionModel } from '../interfaces';
+import { ObjectionService } from '../service';
+import { ModelNotFound } from '../exceptions';
 import { RepositoryError } from "../exceptions/repoError";
-import { CustomQueryBuilder } from "../queryBuilders/custom";
 
-export class DatabaseRepository<T extends BaseModel>
+export class DatabaseRepository<T extends ObjectionModel>
   implements RepositoryContract<T>
 {
   model: any;
@@ -17,13 +16,13 @@ export class DatabaseRepository<T extends BaseModel>
   trx: Knex.Transaction | null = null;
   currentforUpdate: Record<string, any> | null = null;
 
-  public bindCon(conName?: string): RepositoryContract<T> {
+  public bindCon(conName?: string): DatabaseRepository<T> {
     const newRepository = new (<any>(
       this.constructor
-    ))() as RepositoryContract<T>;
+    ))() as DatabaseRepository<T>;
 
     const connection = ObjectionService.connection(
-      conName || this.model.connection
+      conName || this.model.connection,
     );
     newRepository.knexConnection = connection;
 
@@ -39,14 +38,7 @@ export class DatabaseRepository<T extends BaseModel>
    * Get all rows
    */
   async all(): Promise<T[]> {
-    const query = this.query();
-
-    if (this.currentforUpdate) {
-      query.forUpdate();
-      this.clearForUpdate();
-    }
-
-    return query as unknown as Promise<T[]>;
+    return this.query() as unknown as Promise<T[]>;
   }
 
   /**
@@ -54,16 +46,19 @@ export class DatabaseRepository<T extends BaseModel>
    * @param inputs
    * @param error
    */
-  async firstWhere(inputs: ModelKeys<T>, error = true): Promise<T | undefined> {
-    // inputs = inputs || {};
+  async firstWhere(
+    inputs: ModelKeys<T>,
+    error?: boolean,
+    eager?: LoadRelSchema,
+  ): Promise<T | undefined> {
     const query = this.query<T>();
 
-    if (this.currentforUpdate) {
-      query.forUpdate();
-      this.clearForUpdate();
+    if (eager) {
+      query.withGraphFetched(eager);
     }
 
     const model = await query.findOne(inputs);
+
     if (error && !model) this.raiseError();
 
     return model;
@@ -72,23 +67,30 @@ export class DatabaseRepository<T extends BaseModel>
   /**
    * Get all instances with the matching criterias
    * @param inputs
+   * @param whereNot
    * @param error
    */
-  async getWhere(inputs: ModelKeys<T>, error = true): Promise<T[]> {
+  async getWhere(inputs: ModelKeys<T>, error = true, whereNot?: ModelKeys<T>): Promise<T[]> {
     const query = this.query<T[]>();
-
-    if (this.currentforUpdate) {
-      query.forUpdate();
-      this.clearForUpdate();
-    }
 
     for (const key in inputs) {
       Array.isArray(inputs[key] as unknown as any)
         ? query.whereIn(
             key,
-            inputs[key] as unknown as Expression<PrimitiveValue>[]
+            inputs[key] as unknown as Expression<PrimitiveValue>[],
           )
         : query.where(key, inputs[key] as unknown as string);
+    }
+
+    if (whereNot) {
+      for (const key in whereNot) {
+        Array.isArray(whereNot[key] as unknown as any)
+          ? query.whereNotIn(
+              key,
+              whereNot[key] as unknown as Expression<PrimitiveValue>[],
+            )
+          : query.whereNot(key, whereNot[key] as unknown as string);
+      }
     }
     const models = await query;
     if (error && models.length == 0) this.raiseError();
@@ -111,11 +113,16 @@ export class DatabaseRepository<T extends BaseModel>
    */
   async createOrUpdate(
     conditions: ModelKeys<T>,
-    values: ModelKeys<T>
+    values: ModelKeys<T>,
+    isConditionLinkedWithValue = true,
   ): Promise<T | undefined> {
     const model = await this.firstWhere(conditions, false);
     if (!model) {
-      return this.create({ ...conditions, ...values });
+      let payload = { ...values };
+      if (isConditionLinkedWithValue) {
+        payload = { ...payload, ...conditions };
+      }
+      return this.create(payload);
     }
 
     await this.update(model, values);
@@ -139,12 +146,11 @@ export class DatabaseRepository<T extends BaseModel>
    * @param model
    * @param setValues
    */
-  async update(
-    model: ModelKeys<T>,
-    setValues: ModelKeys<T>
-  ): Promise<number | null> {
+  async update(model: T, setValues: ModelKeys<T>): Promise<number | null> {
     const query = this.query<number>();
-    query.findById(model?.id).patch(setValues);
+    if (!model.id) return null;
+
+    query.findById(model.id).patch(setValues);
     return await query;
   }
 
@@ -166,7 +172,7 @@ export class DatabaseRepository<T extends BaseModel>
    * Check if any model exists where condition is matched
    * @param params
    */
-  async exists(params: ModelKeys<T>): Promise<boolean> {
+  async exists(params: T): Promise<boolean> {
     const query = this.query();
     query.where(params);
     return !!(await query.onlyCount());
@@ -176,7 +182,7 @@ export class DatabaseRepository<T extends BaseModel>
    * Get count of rows matching a criteria
    * @param params
    */
-  async count(params: ModelKeys<T>): Promise<number> {
+  async count(params: T): Promise<number> {
     const query = this.query();
     query.where(params);
     return await query.onlyCount();
@@ -187,10 +193,12 @@ export class DatabaseRepository<T extends BaseModel>
    *
    * @param model
    */
-  async delete(model: ModelKeys<T> | number): Promise<boolean> {
-    return !!+(await this.query().deleteById(
-      typeof model != "object" ? model : model["id"]
-    ));
+  async delete(model: T | number): Promise<boolean> {
+    const id = typeof model === 'number' ? model : model.id;
+    if (id === undefined) {
+      throw new Error('Invalid model identifier');
+    }
+    return !!+(await this.query().deleteById(id));
   }
 
   /**
@@ -198,7 +206,7 @@ export class DatabaseRepository<T extends BaseModel>
    *
    * @param inputs T
    */
-  async deleteWhere<T>(inputs: ModelKeys<T>): Promise<boolean> {
+  async deleteWhere<T>(inputs: T): Promise<boolean> {
     const query = this.query();
 
     for (const key in inputs) {
@@ -214,8 +222,18 @@ export class DatabaseRepository<T extends BaseModel>
    *
    * @param model
    */
-  async refresh(model: ModelKeys<T>): Promise<T | undefined> {
-    return model ? await this.query().findById(model["id"]) : undefined;
+  async refresh(model: T, eager?: LoadRelSchema): Promise<T | undefined> {
+    const query = this.query<T>();
+
+    if (eager) {
+      query.withGraphFetched(eager);
+    }
+
+    const id = typeof model === 'number' ? model : model.id;
+    if (id === undefined) {
+      throw new Error('Invalid model identifier');
+    }
+    return model ? await query.findById(id) : undefined;
   }
 
   /**
@@ -225,10 +243,13 @@ export class DatabaseRepository<T extends BaseModel>
    * @param payload
    */
   async attach(
-    model: ModelKeys<T>,
+    model: T,
     relation: string,
-    payload: number | string | Array<number | string> | Record<string, any>
+    payload: number | string | Array<number | string> | Record<string, any>,
   ): Promise<void> {
+    if (!model.$relatedQuery) {
+      throw new Error('Model related query function is undefined');
+    }
     await model.$relatedQuery(relation).relate(payload);
     return;
   }
@@ -239,11 +260,10 @@ export class DatabaseRepository<T extends BaseModel>
    * @param relation
    * @param payload
    */
-  async sync(
-    model: ModelKeys<T>,
-    relation: string,
-    payload: any[]
-  ): Promise<void> {
+  async sync(model: T, relation: string, payload: any[]): Promise<void> {
+    if (!model.$relatedQuery) {
+      throw new Error('Model related query function is undefined');
+    }
     await model.$relatedQuery(relation).unrelate();
     if (Array.isArray(payload) && payload.length > 0) {
       await model.$relatedQuery(relation).relate(payload);
@@ -255,9 +275,9 @@ export class DatabaseRepository<T extends BaseModel>
    * Fetch a chunk and run callback
    */
   async chunk(
-    where: ModelKeys<T>,
+    where: T,
     size: number,
-    cb: (models: T[]) => void
+    cb: (models: T[]) => void,
   ): Promise<void> {
     const query = this.query();
     query.where(where);
@@ -277,11 +297,11 @@ export class DatabaseRepository<T extends BaseModel>
   /**
    * Returns new Query Builder Instance
    */
-  query<R = T>(): CustomQueryBuilder<T, R> {
+  query<R = T>(): CustomQueryBuilder<any, R> {
     if (!this.knexConnection) {
       this.knexConnection = ObjectionService.connection(this.model.connection);
     }
-    return this.model.query(this.trx || this.knexConnection);
+    return this.model.query(this.knexConnection);
   }
 
   getEntityName(): string {
@@ -295,12 +315,13 @@ export class DatabaseRepository<T extends BaseModel>
    * @param returnOne Set this true when you want only the first object to be returned
    */
   async updateAndReturn(
-    where: ModelKeys<T>,
-    setValues: ModelKeys<T>
+    where: T,
+    setValues: ModelKeys<T>,
+    returnOne: boolean = false,
   ): Promise<T | T[]> {
     const query = this.query();
-    const records = await query.where(where).patch(setValues).returning("*");
-    if (records.length == 1) return records[0];
+    const records = await query.where(where).patch(setValues).returning('*');
+    if (returnOne || records.length == 1) return records[0];
     return records;
   }
 

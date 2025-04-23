@@ -1,8 +1,6 @@
 import {
   ForClassMethod,
   Model,
-  ModelClass,
-  Page,
   PartialModelObject,
   QueryBuilder,
 } from "objection";

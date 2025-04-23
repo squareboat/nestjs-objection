@@ -1,8 +1,7 @@
 import { Knex as KnexType } from "knex";
-import { BaseModel } from "../baseModel";
-import { ModelKeys } from "../interfaces";
+import { LoadRelSchema, ModelKeys, ObjectionModel } from "../interfaces";
 
-export interface RepositoryContract<T extends BaseModel> {
+export interface RepositoryContract<T extends ObjectionModel> {
   model: any;
   knexConnection: KnexType | null;
   trx: KnexType.Transaction | null;
@@ -20,14 +19,19 @@ export interface RepositoryContract<T extends BaseModel> {
    * @param inputs
    * @param error
    */
-  firstWhere(inputs: ModelKeys<T>, error?: boolean): Promise<T | undefined>;
+  firstWhere(
+    inputs: ModelKeys<T>,
+    error?: boolean,
+    eager?: LoadRelSchema
+  ): Promise<T | undefined>;
 
   /**
    * Get all instances with the matching criterias
    * @param inputs
+   * @param whereNot
    * @param error
    */
-  getWhere(inputs: ModelKeys<T>, error?: boolean): Promise<T[]>;
+  getWhere(inputs: ModelKeys<T>, error?: boolean, whereNot?: ModelKeys<T>): Promise<T[]>;
 
   /**
    * Create a new model with given inputs
@@ -42,7 +46,8 @@ export interface RepositoryContract<T extends BaseModel> {
    */
   createOrUpdate(
     conditions: ModelKeys<T>,
-    values: ModelKeys<T>
+    values: ModelKeys<T>,
+    isConditionLinkedWithValue?: boolean,
   ): Promise<T | undefined>;
 
   /**
@@ -68,27 +73,28 @@ export interface RepositoryContract<T extends BaseModel> {
    */
   updateWhere(
     where: ModelKeys<T>,
-    setValues: ModelKeys<T>
+    setValues: ModelKeys<T>,
   ): Promise<number | null>;
 
   /**
    * Check if any model exists where condition is matched
    * @param params
    */
-  exists(params: ModelKeys<T>): Promise<boolean>;
+  exists(params: T): Promise<boolean>;
 
   /**
    * Get count of rows matching a criteria
    * @param params
    */
-  count(params: ModelKeys<T>): Promise<number>;
+  count(params: T): Promise<number>;
 
   /**
    * Refresh a model
    *
    * @param model
+   * @param eager
    */
-  refresh(model: T): Promise<T | undefined>;
+  refresh(model: T, eager?: LoadRelSchema): Promise<T | undefined>;
 
   /**
    * Delete a model
@@ -113,7 +119,7 @@ export interface RepositoryContract<T extends BaseModel> {
   attach(
     model: T,
     relation: string,
-    payload: number | string | Array<number | string> | Record<string, any>
+    payload: number | string | Array<number | string> | Record<string, any>,
   ): Promise<void>;
 
   /**
@@ -127,11 +133,7 @@ export interface RepositoryContract<T extends BaseModel> {
   /**
    * Fetch a chunk and run callback
    */
-  chunk(
-    where: ModelKeys<T>,
-    size: number,
-    cb: (models: T[]) => void
-  ): Promise<void>;
+  chunk(where: T, size: number, cb: (models: T[]) => void): Promise<void>;
 
   /**
    * Throws model not found exception.
@@ -152,9 +154,9 @@ export interface RepositoryContract<T extends BaseModel> {
    * @param returnOne Set this true when you want only the first object to be returned
    */
   updateAndReturn(
-    where: ModelKeys<T>,
+    where: T,
     setValues: ModelKeys<T>,
-    returnOne?: boolean
+    returnOne?: boolean,
   ): Promise<T | T[]>;
 
   /**
@@ -163,34 +165,34 @@ export interface RepositoryContract<T extends BaseModel> {
    */
   bulkInsert(inputs: ModelKeys<T>[]): Promise<T[]>;
 
-  /**
+    /**
    * Starts a new transaction on the database
    * @param options Knex.TransactionConfig
    */
-  startTrx(
-    options?: KnexType.TransactionConfig
-  ): Promise<RepositoryContract<T>>;
-
-  /**
-   * Binds passed trx instance to the repo
-   * @param trx
-   */
-  bindTrx(trx: KnexType.Transaction): RepositoryContract<T>;
-
-  /**
-   * @returns trx instance
-   */
-  getTrx(): KnexType.Transaction | null;
-
-  /**
-   * Commits the transaction
-   */
-  commitTrx(): Promise<void>;
-
-  /**
-   * Rollbacks the transaction
-   */
-  rollbackTrx(): Promise<void>;
-
-  forUpdate(): this;
+    startTrx(
+      options?: KnexType.TransactionConfig
+    ): Promise<RepositoryContract<T>>;
+  
+    /**
+     * Binds passed trx instance to the repo
+     * @param trx
+     */
+    bindTrx(trx: KnexType.Transaction): RepositoryContract<T>;
+  
+    /**
+     * @returns trx instance
+     */
+    getTrx(): KnexType.Transaction | null;
+  
+    /**
+     * Commits the transaction
+     */
+    commitTrx(): Promise<void>;
+  
+    /**
+     * Rollbacks the transaction
+     */
+    rollbackTrx(): Promise<void>;
+  
+    forUpdate(): this;
 }
