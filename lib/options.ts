@@ -14,7 +14,7 @@ export interface DatabaseOptions {
 export interface DatabaseAsyncOptions extends Pick<ModuleMetadata, 'imports'> {
   name?: string;
   isGlobal: boolean;
-  useExisting?: Type<DatabaseOptions>;
+  useExisting?: Type<DatabaseAsyncOptionsFactory>;
   useClass?: Type<DatabaseAsyncOptionsFactory>;
   useFactory?: (...args: any[]) => Promise<DatabaseOptions> | DatabaseOptions;
   inject?: any[];

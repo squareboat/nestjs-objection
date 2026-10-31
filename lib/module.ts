@@ -41,9 +41,10 @@ export class ObjectionModule {
     return {
       global: options.isGlobal || false,
       module: ObjectionModule,
-      imports: [],
+      imports: [...(options.imports || [])],
       providers: [
         this.createOptionsProvider(options),
+        ...(options.useClass ? [{ provide: options.useClass, useClass: options.useClass }] : []),
         ObjectionService,
         DbOperationsCommand,
         DatabaseUtilitiesCommand,
@@ -64,7 +65,7 @@ export class ObjectionModule {
     }
 
     const inject = [
-      (options.useClass || options.useExisting) as Type<DatabaseOptions>,
+      (options.useClass || options.useExisting) as Type<DatabaseAsyncOptionsFactory>,
     ];
 
     return {

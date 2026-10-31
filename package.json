@@ -19,7 +19,7 @@
   "bugs": {
     "url": "https://github.com/squareboat/nestjs-objection/issues"
   },
-  "homepage": "https://squareboat.com/open-source/database/",
+  "homepage": "https://squareboat.com/open-source/nestjs-boilerplate/database/introduction/",
   "author": "Squareboat <hi@squareboat.com>",
   "private": false,
   "license": "MIT",
