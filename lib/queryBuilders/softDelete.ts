@@ -16,7 +16,10 @@ export class SoftDeleteQueryBuilder<
     const qb = QueryBuilder.forClass.call(this, modelClass);
     qb.onBuild((builder) => {
       const tableName = builder.tableRefFor(modelClass as any);
-      if (!builder.context().withArchived) {
+      // only filter top-level reads; partial builders (relations, subqueries)
+      // and update/delete queries are left alone
+      const isPartial = (builder as any)["isPartial"]();
+      if (!isPartial && builder.isFind() && !builder.context().withArchived) {
         builder.whereNull(`${tableName}.deleted_at`);
       }
     });
