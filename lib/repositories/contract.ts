@@ -146,10 +146,10 @@ export interface RepositoryContract<T extends BaseModel> {
   query(): any;
 
   /**
-   * Update rows where condition is matched and return modified rows
+   * Update rows where condition is matched and return modified rows: the row
+   * itself when one row matched, else an array.
    * @param where
    * @param setValues
-   * @param returnOne Set this true when you want only the first object to be returned
    */
   updateAndReturn(
     where: ModelKeys<T>,
@@ -158,7 +158,9 @@ export interface RepositoryContract<T extends BaseModel> {
   ): Promise<T | T[]>;
 
   /**
-   * Bulk insert new models with given inputs
+   * Insert several rows in one query and return them.
+   * Only works on Postgres and SQL Server: on other databases objection
+   * throws "batch insert only works with Postgresql and SQL Server".
    * @param inputs
    */
   bulkInsert(inputs: ModelKeys<T>[]): Promise<T[]>;

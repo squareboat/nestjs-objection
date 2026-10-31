@@ -9,6 +9,13 @@ import { ModelNotFound } from "../exceptions";
 import { RepositoryError } from "../exceptions/repoError";
 import { CustomQueryBuilder } from "../queryBuilders/custom";
 
+/** knex dialects whose SQL supports RETURNING (MySQL/MariaDB and Redshift do not). */
+const RETURNING_DIALECTS = ["postgresql", "mssql", "sqlite3", "oracle", "oracledb"];
+
+function hasReturning(query: CustomQueryBuilder<any, any>): boolean {
+  return RETURNING_DIALECTS.includes(query.knex().client.dialect);
+}
+
 export class DatabaseRepository<T extends BaseModel>
   implements RepositoryContract<T>
 {
@@ -101,7 +108,11 @@ export class DatabaseRepository<T extends BaseModel>
    * @param inputs
    */
   async create(inputs: ModelKeys<T>): Promise<T> {
-    return this.query().insert(inputs).returning("*") as unknown as T;
+    const query = this.query();
+    query.insert(inputs);
+    // without RETURNING (MySQL) objection sets the inserted id on the model
+    if (hasReturning(query)) query.returning("*");
+    return query as unknown as T;
   }
 
   /**
@@ -289,28 +300,63 @@ export class DatabaseRepository<T extends BaseModel>
   }
 
   /**
-   * Update rows where condition is matched and return modified rows
+   * Update rows where condition is matched and return modified rows: the row
+   * itself when one row matched, else an array.
+   *
+   * Databases without RETURNING (MySQL): the matching rows are locked, patched
+   * by id and read back, in a transaction (the repository's own, if any).
    * @param where
    * @param setValues
-   * @param returnOne Set this true when you want only the first object to be returned
    */
   async updateAndReturn(
     where: ModelKeys<T>,
     setValues: ModelKeys<T>
   ): Promise<T | T[]> {
     const query = this.query();
-    const records = await query.where(where).patch(setValues).returning("*");
+    const records: T[] = hasReturning(query)
+      ? await query.where(where).patch(setValues).returning("*")
+      : await this.patchAndRefetch(where, setValues);
     if (records.length == 1) return records[0];
     return records;
   }
 
+  private async patchAndRefetch(
+    where: ModelKeys<T>,
+    setValues: ModelKeys<T>
+  ): Promise<T[]> {
+    // like patch(), archived (soft deleted) rows are included
+    const run = async (trx: Knex.Transaction): Promise<T[]> => {
+      const matched = await this.model
+        .query(trx)
+        .context({ withArchived: true })
+        .where(where)
+        .forUpdate()
+        .select(this.model.idColumn);
+      const ids = matched.map((row: BaseModel) => row.$id());
+      if (ids.length === 0) return [];
+
+      await this.model.query(trx).findByIds(ids).patch(setValues);
+      return this.model
+        .query(trx)
+        .context({ withArchived: true })
+        .findByIds(ids);
+    };
+
+    if (this.trx) return run(this.trx);
+    return (this.knexConnection as KnexType).transaction(run);
+  }
+
   /**
-   * Bulk insert new models with given inputs,
-   * currently only works in mysql.
+   * Insert several rows in one query and return them.
+   * Only works on Postgres and SQL Server: on other databases objection
+   * throws "batch insert only works with Postgresql and SQL Server".
    * @param inputs
    */
   async bulkInsert(inputs: ModelKeys<T>[]): Promise<T[]> {
-    return this.query().insert(inputs).returning("*") as unknown as T[];
+    const query = this.query();
+    query.insert(inputs);
+    if (hasReturning(query)) query.returning("*");
+    return query as unknown as T[];
   }
 
   async startTrx(

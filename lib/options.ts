@@ -9,12 +9,17 @@ export interface DatabaseOptions {
   isGlobal?: boolean;
   default: string;
   connections: Record<string, DbConnectionOptions>;
+  /**
+   * How long (ms) app shutdown waits for the connection pools to close.
+   * Defaults to 5000.
+   */
+  shutdownTimeout?: number;
 }
 
 export interface DatabaseAsyncOptions extends Pick<ModuleMetadata, 'imports'> {
   name?: string;
   isGlobal: boolean;
-  useExisting?: Type<DatabaseOptions>;
+  useExisting?: Type<DatabaseAsyncOptionsFactory>;
   useClass?: Type<DatabaseAsyncOptionsFactory>;
   useFactory?: (...args: any[]) => Promise<DatabaseOptions> | DatabaseOptions;
   inject?: any[];

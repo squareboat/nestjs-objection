@@ -82,7 +82,7 @@ export class DbOperationsCommand {
   }
 
   @Command("migrate:reset {--connection==}", {
-    desc: "Command to reset the migration",
+    desc: "Command to rollback all the migrations",
   })
   async migrateReset(_cli: ConsoleIO) {
     const conn = _cli.option<string>("connection") || this.options.default;
@@ -90,7 +90,8 @@ export class DbOperationsCommand {
     const connConfig = this.options.connections[conn];
 
     const confirm = await _cli.confirm(
-      "Are you sure you want to reset your database? This action is irreversible."
+      `Are you sure you want to rollback all the migrations of '${conn}'? This action is irreversible.`,
+      false
     );
 
     if (!confirm) {
@@ -98,22 +99,10 @@ export class DbOperationsCommand {
       return;
     }
 
-    const password = await _cli.password(
-      "Please enter the password of the database to proceed"
-    );
-
-    // if (connConfig.connection && typeof connConfig.connection != "string") {
-    //   if (
-    //     connConfig.connection?["password"] &&
-    //     password !== connConfig.connection?['password']
-    //   ) {
-    //     _cli.error(" Wrong Password. Exiting... ");
-    //     return;
-    //   }
-    // }
-
-    const [, migrations]: [number, string[]] = await knex.migrate.down(
-      connConfig.migrations
+    // every batch, not only the last one
+    const [, migrations]: [number, string[]] = await knex.migrate.rollback(
+      connConfig.migrations,
+      true
     );
 
     if (migrations.length === 0) {
