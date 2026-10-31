@@ -17,3 +17,5 @@ CONTRIBUTING.MD
 .release-it.json
 .eslintignore
 .eslintrc.js
+# created by the nest-console postinstall when installing in this repo
+/cli
